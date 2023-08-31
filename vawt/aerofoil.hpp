@@ -1,14 +1,11 @@
 #ifndef AEROFOIL_HPP
 #define AEROFOIL_HPP
 
-#include "Interpolators/_2D/BilinearInterpolator.hpp"
+#include <Interpolators/_2D/BilinearInterpolator.hpp>
+#include <memory>
 #include <string_view>
 #include <tuple>
-#include <utility>
-#include <list>
 #include <vector>
-#include <limits>
-#include <Interpolate.hpp>
 
 namespace vawt {
 
@@ -69,12 +66,66 @@ public:
 class AerofoilBuilder {
 private:
     std::vector<double> alpha, re, cl, cd;
-    bool symmetric = false;
+    bool _symmetric = false;
+    bool _update_aspect_ratio = false;
     double aspect_ratio = std::numeric_limits<double>::infinity();
 
 public:
-    AerofoilBuilder& add_data(std::string_view file, double re);
+    /**
+     * @brief load aerofoil data for a given reynolds number from a file
+     * 
+     * The file is expected to be in csv format delimited by `,` without a header.
+     * It should contain 3 columns: alpha (in degrees), cl, cd
+     * 
+     * @param file - the file path
+     * @param re - the reynoldsnumber for the data
+     * @return AerofoilBuilder& 
+     */
+    AerofoilBuilder& load_data(std::string_view file, double re);
 
+    /**
+     * @brief is the aerofoil profile symmetric
+     * 
+     * @param symmetric 
+     * @return AerofoilBuilder& 
+     */
+    AerofoilBuilder& symmetric(bool symmetric) {
+        this->_symmetric = symmetric; return *this;
+    };
+
+    /**
+     * @brief Set the aspect ratio of the areofoil
+     * 
+     * When the data does not reflect this aspect ratio, but instead 
+     * is profile data for an infinte aspect ratio set [`update_aspect_ratio`]
+     * 
+     * @param ar 
+     * @return AerofoilBuilder& 
+     */
+    AerofoilBuilder& set_aspect_ratio(double ar){
+        this->aspect_ratio = ar; return *this;
+    };
+
+    /**
+     * @brief Assume the provided data to be for a infinite aspect ratio and change it.
+     * 
+     * When the Aerofoil is built, the data will be
+     * Updtated with the Lanchester-Prandtl model below the stalling angle
+     * and with the Viterna-Corrigan above the stall angle
+     * 
+     * @param yes 
+     * @return AerofoilBuilder& 
+     */
+    AerofoilBuilder& update_aspect_ratio(bool yes){
+        this->_update_aspect_ratio = yes; return *this;
+    }
+
+    /**
+     * @brief build the Aerofoil
+     * 
+     * @return std::shared_ptr<Aerofoil> 
+     */
+    std::shared_ptr<Aerofoil> build();
 };
 
 }

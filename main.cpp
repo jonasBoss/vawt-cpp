@@ -7,7 +7,7 @@ int main(int argc, char **argv) {
 
     vawt::AerofoilBuilder* builder = new vawt::AerofoilBuilder;
 
-    builder->add_data("examples/NACA0018/NACA0018Re0040.data", 20000.0);
+    builder->load_data("examples/NACA0018/NACA0018Re0040.data", 20000.0);
 
     std::cout << "bye" << std::endl;
     

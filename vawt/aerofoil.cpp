@@ -20,7 +20,7 @@ double to_double(string s) {
     return boost::lexical_cast<double>(s);
 }
 
-AerofoilBuilder& AerofoilBuilder::add_data(string_view file, double re) {
+AerofoilBuilder& AerofoilBuilder::load_data(string_view file, double re) {
     CSVFormat format;
     format.no_header().delimiter(',');
     unique_ptr<CSVReader> reader(new CSVReader(file, format));
