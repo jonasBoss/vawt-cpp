@@ -1,0 +1,1 @@
+./build/vawt-cpp
