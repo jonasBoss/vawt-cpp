@@ -1,11 +1,14 @@
 #ifndef AEROFOIL_HPP
 #define AEROFOIL_HPP
 
+#include "Interpolators/_2D/BilinearInterpolator.hpp"
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <list>
 #include <vector>
 #include <limits>
+#include <Interpolate.hpp>
 
 namespace vawt {
 
@@ -56,6 +59,8 @@ public:
 class Aerofoil{
 private:
     bool symmetric;
+    _2D::BilinearInterpolator<double> cl;
+    _2D::BilinearInterpolator<double> cd;
 
 public:
     ClCd cl_cl(double alpha, double re);
@@ -66,6 +71,9 @@ private:
     std::vector<double> alpha, re, cl, cd;
     bool symmetric = false;
     double aspect_ratio = std::numeric_limits<double>::infinity();
+
+public:
+    AerofoilBuilder& add_data(std::string_view file, double re);
 
 };
 
