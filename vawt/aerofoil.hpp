@@ -8,15 +8,19 @@
 #include <vector>
 
 namespace vawt {
+class AerofoilBuilder;
+class Aerofoil;
 
 /**
  * @brief Aerofoil coefficients of lift and drag
  * 
  */
 class ClCd{
+    friend Aerofoil;
 private:
     double _cl;
     double _cd;
+    ClCd(double cl, double cd) {this->_cl = cl; this->_cd = cd;}
 
 public:
     /**
@@ -36,8 +40,8 @@ public:
     /**
      * @brief Convert coefficients to normal and tangential turbine coordinates
      * 
-     * @param alpha - the foil angle of attac  
-     * @param beta - the pitch agle from turbine tangent to wing chord
+     * @param alpha - the foil angle of attac in radians
+     * @param beta - the pitch agle from turbine tangent to wing chord in radians
      * @return std::pair<double, double> - (normal coefficinent, tangential coefficient)
      */
     std::pair<double, double> to_tangential(double alpha, double beta);
@@ -45,22 +49,39 @@ public:
     /**
      * @brief Convert coefficients to global xy direction
      * 
-     * @param alpha - the foil angle of attac  
-     * @param beta - the pitch agle from turbine tangent to wing chord
-     * @param theta - the position angle at the turbine
+     * @param alpha - the foil angle of attac in radians
+     * @param beta - the pitch agle from turbine tangent to wing chord in radians
+     * @param theta - the position angle at the turbine in radians
      * @return std::pair<double, double> - (x-coefficient, y-coefficient)
      */
     std::pair<double, double> to_global(double alpha, double beta, double theta);
 };
 
 class Aerofoil{
+    friend AerofoilBuilder;
 private:
     bool symmetric;
     _2D::BilinearInterpolator<double> cl;
     _2D::BilinearInterpolator<double> cd;
+    Aerofoil(std::vector<double>& alpha, std::vector<double>& re, std::vector<double>& cl, std::vector<double>& cd, bool symmetric) {
+        this->cl = _2D::BilinearInterpolator<double>(alpha, re, cl);
+        this->cd = _2D::BilinearInterpolator<double>(alpha, re, cd);
+        this->symmetric = symmetric;
+    }
 
 public:
-    ClCd cl_cl(double alpha, double re);
+    /**
+     * @brief lift and drag coefficients
+     * 
+     * @param alpha 
+     * @param re 
+     * @return ClCd 
+     */
+    ClCd cl_cl(double alpha, double re) {
+        double cl = this->cl(alpha, re);
+        double cd = this->cd(alpha, re);
+        return ClCd(cl, cd);
+    }
 };
 
 class AerofoilBuilder {
@@ -89,9 +110,9 @@ public:
      * @param symmetric 
      * @return AerofoilBuilder& 
      */
-    AerofoilBuilder& symmetric(bool symmetric) {
-        this->_symmetric = symmetric; return *this;
-    };
+    AerofoilBuilder& symmetric(bool yes) {
+        this->_symmetric = yes; return *this;
+    }
 
     /**
      * @brief Set the aspect ratio of the areofoil
@@ -104,7 +125,7 @@ public:
      */
     AerofoilBuilder& set_aspect_ratio(double ar){
         this->aspect_ratio = ar; return *this;
-    };
+    }
 
     /**
      * @brief Assume the provided data to be for a infinite aspect ratio and change it.

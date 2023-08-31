@@ -8,6 +8,7 @@
 #include <locale>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace vawt;
 using namespace csv;
@@ -36,4 +37,22 @@ AerofoilBuilder& AerofoilBuilder::load_data(string_view file, double re) {
         this->re.push_back(re);
     }
     return *this;
+}
+
+shared_ptr<Aerofoil> AerofoilBuilder::build() {
+    vector<double> alpha;
+    vector<double> re;
+    vector<double> cl;
+    vector<double> cd;
+
+    if (this->_update_aspect_ratio) {
+        throw "not yet implemented";
+    } else {
+        alpha = this->alpha;
+        re = this->re;
+        cl = this->cl;
+        cd = this->cd;
+    }
+
+    return shared_ptr<Aerofoil>(new Aerofoil(alpha,re,cl,cd,this->_symmetric));
 }
