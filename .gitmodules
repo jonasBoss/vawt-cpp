@@ -1,3 +1,6 @@
 [submodule "external/libinterpolate"]
 	path = external/libinterpolate
 	url = https://github.com/CD3/libInterpolate
+[submodule "external/csv-parser"]
+	path = external/csv-parser
+	url = https://github.com/vincentlaucsb/csv-parser.git
