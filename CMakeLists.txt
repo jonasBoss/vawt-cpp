@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 
-project(vawt-cpp)
+project(vawt)
 
 add_executable(vawt-cpp main.cpp)
 
-install(TARGETS vawt-cpp RUNTIME DESTINATION bin)
+add_subdirectory(vawt)
+
+#install(TARGETS vawt RUNTIME DESTINATION bin)
