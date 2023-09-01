@@ -63,9 +63,9 @@ private:
     bool symmetric;
     _2D::BilinearInterpolator<double> cl;
     _2D::BilinearInterpolator<double> cd;
-    Aerofoil(std::vector<double>& alpha, std::vector<double>& re, std::vector<double>& cl, std::vector<double>& cd, bool symmetric) {
-        this->cl = _2D::BilinearInterpolator<double>(alpha, re, cl);
-        this->cd = _2D::BilinearInterpolator<double>(alpha, re, cd);
+    Aerofoil(std::vector<double> alpha, std::vector<double> re, std::vector<double> cl, std::vector<double> cd, bool symmetric) {
+        this->cl.setData(re, alpha, cl);
+        this->cd.setData(re, alpha, cd);
         this->symmetric = symmetric;
     }
 
@@ -78,8 +78,8 @@ public:
      * @return ClCd 
      */
     ClCd cl_cl(double alpha, double re) {
-        double cl = this->cl(alpha, re);
-        double cd = this->cd(alpha, re);
+        double cl = this->cl(re, alpha);
+        double cd = this->cd(re, alpha);
         return ClCd(cl, cd);
     }
 };
