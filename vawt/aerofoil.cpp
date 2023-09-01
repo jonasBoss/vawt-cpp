@@ -5,10 +5,12 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/range/combine.hpp>
 #include <boost/range/detail/combine_cxx11.hpp>
+#include <boost/tuple/detail/tuple_basic.hpp>
 #include <cassert>
 #include <csv.hpp>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <locale>
 #include <memory>
 #include <string>
@@ -41,83 +43,64 @@ void sort_by_re(vector<double>& alpha, vector<double>& re,vector<double>& cl,vec
     }
 }
 
+void AerofoilBuilder::add_data(tuple<double, vector<double>, vector<double>, vector<double>> data){
+    double re = get<0>(data);
+    auto it = lower_bound(this->data.begin(), this->data.end(), re, [](const std::tuple<double, std::vector<double>, std::vector<double>, std::vector<double>>& tuple, double value) {
+        return std::get<0>(tuple) < value;
+    });
+    this->data.insert(it, data);
+}
+
 AerofoilBuilder& AerofoilBuilder::load_data(string_view file, double re) {
     CSVFormat format;
     format.no_header().delimiter(',');
     unique_ptr<CSVReader> reader(new CSVReader(file, format));
+    if (this->contains_re(re)) {
+        throw "data is already loaded";
+    }
+    
+    vector<double> alpha, cl, cd;
 
     for (CSVRow& row: *reader) {
         assert(row.size() == 3);
         auto iter =  row.begin();
-        this->alpha.push_back(to_double(iter->get()) * TO_RAD);
+        alpha.push_back(to_double(iter->get()) * TO_RAD);
         iter++;
-        this->cl.push_back(to_double(iter->get()));
+        cl.push_back(to_double(iter->get()));
         iter++;
-        this->cd.push_back(to_double(iter->get()));
-        this->re.push_back(re);
+        cd.push_back(to_double(iter->get()));
     }
+    this->add_data(tuple(re, alpha, cl, cd));
     return *this;
 }
 
 shared_ptr<Aerofoil> AerofoilBuilder::build() {
-    vector<double> alpha;
-    vector<double> re;
-    vector<double> cl;
-    vector<double> cd;
-
-
+    std::list<std::tuple<double, std::vector<double>, std::vector<double>, std::vector<double>>> data;
     if (this->_update_aspect_ratio) {
         throw "not yet implemented";
     } else {
-        alpha = this->alpha;
-        re = this->re;
-        cl = this->cl;
-        cd = this->cd;
-    }
-    assert(alpha.size() == re.size() && re.size()  == cl.size() && cl.size() == cd.size());
-
-    // the following needs a sorted re
-    sort_by_re(alpha, re, cl, cd);
-
-    // we know that re contains contiguous ranges of repeating values
-    // find the rages for the minimum and maximum value
-    auto min_max = minmax_element(re.begin(), re.end());
-    auto min_range = equal_range(re.begin(), re.end(), *min_max.first);
-    auto max_range = equal_range(re.begin(), re.end(), *min_max.second);
-
-    size_t min_range_length = std::distance(min_range.first, min_range.second);
-    size_t max_range_length = std::distance(max_range.first, max_range.second);
-
-    // extrapolate the data for re = 0 to re = inf by
-    // Appending values from each vector within their respective ranges.
-    for (auto it = min_range.first; it != min_range.second; ++it) {
-        size_t index = std::distance(re.begin(), it);
-        alpha.push_back(alpha[index]);
-        cl.push_back(cl[index]);
-        cd.push_back(cd[index]);
+        data = this->data;
     }
 
-    for (auto it = max_range.first; it != max_range.second; ++it) {
-        size_t index = std::distance(re.begin(), it);
-        alpha.push_back(alpha[index]);
-        cl.push_back(cl[index]);
-        cd.push_back(cd[index]);
-    }
+    // duplicate highest and lowest values for extrapolation over re
+    auto lowest = data.front();
+    get<0>(lowest) = 0.0;
+    data.push_front(lowest);
+    auto highest = data.back();
+    get<0>(highest) = numeric_limits<double>::max();
+    data.push_back(highest);
 
-    for (size_t i = 0; i < min_range_length; ++i) {
-        re.push_back(0.0); 
+    // collect everything into coniguous vectors for the interpolator
+    vector<double> alpha, re, cl, cd;
+    for (auto dataset: data){
+        for (auto datapoint: boost::range::combine(get<1>(dataset), get<2>(dataset), get<3>(dataset))) {
+            double _alpha, _cl, _cd;
+            boost::tie(_alpha, _cl, _cd) = datapoint;
+            re.push_back(get<0>(dataset));
+            alpha.push_back(_alpha);
+            cl.push_back(_cl);
+            cd.push_back(_cd);
+        }
     }
-    for (size_t i = 0; i < max_range_length; ++i) {
-        re.push_back(std::numeric_limits<double>::max());
-    }
-
-    sort_by_re(alpha, re, cl, cd);
-
-    for (auto tup: boost::range::combine(alpha, re, cl, cd)) {
-        double alpha, re, cl, cd;
-        boost::tie(alpha, re, cl, cd) = tup;
-        cout << setw(10) << alpha << setw(10) << re << setw(10) << cl << setw(10) << cd << endl;
-    }
-
-    return shared_ptr<Aerofoil>(new Aerofoil(alpha,re,cl,cd,this->_symmetric));
+    return shared_ptr<Aerofoil>(new Aerofoil(alpha, re, cl, cd,this->_symmetric));
 }

@@ -2,6 +2,7 @@
 #define AEROFOIL_HPP
 
 #include <Interpolators/_2D/BilinearInterpolator.hpp>
+#include <list>
 #include <memory>
 #include <string_view>
 #include <tuple>
@@ -86,10 +87,25 @@ public:
 
 class AerofoilBuilder {
 private:
-    std::vector<double> alpha, re, cl, cd;
+    std::list<std::tuple<double, std::vector<double>, std::vector<double>, std::vector<double>>> data;
     bool _symmetric = false;
     bool _update_aspect_ratio = false;
     double aspect_ratio = std::numeric_limits<double>::infinity();
+
+    /**
+     * @brief is data for the reynodlsnumber available?
+     * 
+     * @param re 
+     * @return true 
+     * @return false 
+     */
+    bool contains_re(double re){
+        return  find_if(this->data.begin(), this->data.end(), [re](const std::tuple<double, std::vector<double>, std::vector<double>, std::vector<double>>& tuple) {
+                return std::get<0>(tuple) == re;
+        }) != this->data.end();
+    }
+
+    void add_data(std::tuple<double, std::vector<double>, std::vector<double>, std::vector<double>> data);
 
 public:
     /**
