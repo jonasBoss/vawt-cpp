@@ -1,4 +1,5 @@
 #include "aerofoil.hpp"
+#include "Interpolators/_1D/LinearInterpolator.hpp"
 #include <algorithm>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/lexical_cast.hpp>
@@ -17,6 +18,7 @@
 #include <string>
 #include <sys/types.h>
 #include <tuple>
+#include <set>
 #include <vector>
 
 using namespace vawt;
@@ -75,6 +77,38 @@ void viterna_corrigan(DataPoint p, DataPoint stall, double ar) {
     p.cd = cd_max * pow(sin(p.alpha), 2) + kd * cos(p.alpha);
 }
 
+/**
+ * @brief resample the whole dataset, such that for each row the same alpha values are used
+ * 
+ * @param set 
+ */
+void resample_set(DataSet& dataset) {
+    vector<double> resampled_alpha;
+    for (DataRow& row: dataset){
+        for (double alpha: get<1>(row)){
+            resampled_alpha.push_back(alpha);
+        }
+    }
+    sort(resampled_alpha.begin(),resampled_alpha.end());
+    auto u = unique(resampled_alpha.begin(), resampled_alpha.end());
+    resampled_alpha.erase(u, resampled_alpha.end());
+
+    for (DataRow& row: dataset){
+        vector<double>& alpha = get<1>(row);
+        vector<double>& cl = get<2>(row);
+        vector<double>& cd = get<3>(row);
+        _1D::LinearInterpolator<double> cl_interp(alpha, cl);
+        _1D::LinearInterpolator<double> cd_interp(alpha, cd);
+        alpha = resampled_alpha;
+        cl.resize(0);
+        cd.resize(0);
+        for (double x: alpha) {
+            cl.push_back(cl_interp(x));
+            cd.push_back(cd_interp(x));
+        }
+    }
+}
+
 DataSet AerofoilBuilder::transformed_set() {
     if (!this->_update_aspect_ratio) {
         return this->data;
@@ -91,7 +125,6 @@ DataSet AerofoilBuilder::transformed_set() {
     }
     return set;
 }
-
 
 void AerofoilBuilder::transform_row(DataRow& row) {
     if (!this->_symmetric){
@@ -165,12 +198,8 @@ AerofoilBuilder& AerofoilBuilder::load_data(string_view file, double re) {
 }
 
 shared_ptr<Aerofoil> AerofoilBuilder::build() {
-    DataSet data;
-    if (this->_update_aspect_ratio) {
-        throw "not yet implemented";
-    } else {
-        data = this->data;
-    }
+    DataSet data = this->transformed_set();
+    resample_set(data);
 
     // duplicate highest and lowest values for extrapolation over re
     auto lowest = data.front();

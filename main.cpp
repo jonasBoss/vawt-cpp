@@ -17,6 +17,9 @@ int main(int argc, char **argv) {
         load_data("examples/NACA0018/NACA0018Re0080.data", 80000.0)
         .load_data("examples/NACA0018/NACA0018Re0040.data", 40000.0)
         .load_data("examples/NACA0018/NACA0018Re0160.data", 160000.0)
+        .set_aspect_ratio(12.8)
+        .update_aspect_ratio(true)
+        .symmetric(true)
         .build();
 
     std::vector<double> alpha(45);
