@@ -73,7 +73,7 @@ void viterna_corrigan(DataPoint p, DataPoint stall, double ar) {
     p.cd = cd_max * pow(sin(p.alpha), 2) + kd * cos(p.alpha);
 }
 
-void AerofoilBuilder::add_data(tuple<double, vector<double>, vector<double>, vector<double>> data){
+void AerofoilBuilder::add_data(DataRow data){
     double re = get<0>(data);
     auto it = lower_bound(this->data.begin(), this->data.end(), re, [](const std::tuple<double, std::vector<double>, std::vector<double>, std::vector<double>>& tuple, double value) {
         return std::get<0>(tuple) < value;
@@ -105,7 +105,7 @@ AerofoilBuilder& AerofoilBuilder::load_data(string_view file, double re) {
 }
 
 shared_ptr<Aerofoil> AerofoilBuilder::build() {
-    std::list<std::tuple<double, std::vector<double>, std::vector<double>, std::vector<double>>> data;
+    DataSet data;
     if (this->_update_aspect_ratio) {
         throw "not yet implemented";
     } else {

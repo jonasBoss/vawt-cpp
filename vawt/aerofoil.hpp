@@ -11,6 +11,8 @@
 namespace vawt {
 class AerofoilBuilder;
 class Aerofoil;
+using DataRow = std::tuple<double, std::vector<double>, std::vector<double>, std::vector<double>>;
+using DataSet = std::list<DataRow>;
 
 /**
  * @brief Aerofoil coefficients of lift and drag
@@ -87,7 +89,7 @@ public:
 
 class AerofoilBuilder {
 private:
-    std::list<std::tuple<double, std::vector<double>, std::vector<double>, std::vector<double>>> data;
+    DataSet data;
     bool _symmetric = false;
     bool _update_aspect_ratio = false;
     double aspect_ratio = std::numeric_limits<double>::infinity();
@@ -105,7 +107,15 @@ private:
         }) != this->data.end();
     }
 
-    void add_data(std::tuple<double, std::vector<double>, std::vector<double>, std::vector<double>> data);
+    /**
+     * @brief adds a datarow to `this.data` 
+     *
+     * The datarow is inserted such that `this.data` is sorted by `re`
+     * 
+     * @param data 
+     */
+    void add_data(DataRow data);
+
 
 public:
     /**
