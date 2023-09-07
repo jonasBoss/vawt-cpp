@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(vawt)
 
-add_library(vawt aerofoil.hpp aerofoil.cpp)
+add_library(vawt aerofoil.hpp aerofoil.cpp private_stuff.hpp)
 
 find_package(Boost REQUIRED)
 

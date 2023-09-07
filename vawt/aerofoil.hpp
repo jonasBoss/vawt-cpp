@@ -1,6 +1,7 @@
 #ifndef AEROFOIL_HPP
 #define AEROFOIL_HPP
 
+#include "private_stuff.hpp"
 #include <Interpolators/_2D/BilinearInterpolator.hpp>
 #include <list>
 #include <memory>
@@ -54,7 +55,9 @@ class ClCd {
      * @return std::pair<double, double> - (normal coefficinent, tangential
      * coefficient)
      */
-    std::pair<double, double> to_tangential(double alpha, double beta);
+    std::pair<double, double> to_tangential(double alpha, double beta) {
+        return rot_vec(this->cl(), -this->cd(), alpha + beta);
+    }
 
     /**
      * @brief Convert coefficients to global xy direction
@@ -66,7 +69,9 @@ class ClCd {
      * @return std::pair<double, double> - (x-coefficient, y-coefficient)
      */
     std::pair<double, double> to_global(double alpha, double beta,
-                                        double theta);
+                                        double theta) {
+        return rot_vec(this->cl(), -this->cd(), alpha + beta + theta);
+    }
 };
 
 class Aerofoil {
