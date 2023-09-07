@@ -116,7 +116,21 @@ private:
      */
     void add_data(DataRow data);
 
+    /**
+     * @brief create a new dataset with transformed datapoints for aspect ratio correction
+     * 
+     * @return DataSet 
+     */
+    DataSet transformed_set();
 
+    /**
+     * @brief transform the datapoints in the row for aspect ratio correction
+     * 
+     * @param row 
+     * @return DataRow 
+     */
+    void transform_row(DataRow& row);
+    
 public:
     /**
      * @brief load aerofoil data for a given reynolds number from a file

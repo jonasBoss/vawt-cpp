@@ -15,6 +15,7 @@
 #include <locale>
 #include <memory>
 #include <string>
+#include <sys/types.h>
 #include <tuple>
 #include <vector>
 
@@ -22,8 +23,9 @@ using namespace vawt;
 using namespace csv;
 using namespace std;
 
-const double TO_RAD = boost::math::double_constants::pi / 180;
 const double PI = boost::math::double_constants::pi;
+const double TO_RAD = PI / 180.0;
+const double TO_DEG = 1.0 / TO_RAD;
 
 /**
  * @brief cast a string to double
@@ -71,6 +73,64 @@ void viterna_corrigan(DataPoint p, DataPoint stall, double ar) {
     double kl = (stall.cl - cd_max * sin(stall.alpha) * cos(stall.alpha)) * sin(stall.alpha) / pow(cos(stall.alpha), 2);
     p.cl = cd_max / 2.0 * sin(2.0 * p.alpha) + kl * pow(cos(p.alpha), 2) / sin(p.alpha);
     p.cd = cd_max * pow(sin(p.alpha), 2) + kd * cos(p.alpha);
+}
+
+DataSet AerofoilBuilder::transformed_set() {
+    if (!this->_update_aspect_ratio) {
+        return this->data;
+    }
+
+    if (this->aspect_ratio >= 98.0) {
+        return this->data;
+    }
+
+    DataSet set;
+    for (DataRow row: this->data){
+        this->transform_row(row);
+        set.push_back(row);
+    }
+    return set;
+}
+
+
+void AerofoilBuilder::transform_row(DataRow& row) {
+    if (!this->_symmetric){
+        throw "aspect ratio correction for asymetric profiles is not implemented";
+    }
+    vector<double>& alpha = get<1>(row);
+    vector<double>& cl = get<2>(row);
+    vector<double>& cd = get<3>(row);
+
+    int stall_idx = -1;
+    for (int i=1; i < alpha.size(); i++){
+        if (cl[i-1] > cl[i]) {
+            stall_idx = i - 1;
+            break;
+        }
+        DataPoint p {alpha[i], cl[i], cd[i]};
+        lanchester_prandtl(p, this->aspect_ratio);
+    }
+    if (stall_idx==-1) {
+        throw "stall point not found!";
+    }
+    DataPoint stall {alpha[stall_idx], cl[stall_idx], cd[stall_idx]};
+
+    // above the stall point we calculate the data for each degree up to 90
+    int len = stall_idx + 90 + 1 - floor(alpha[stall_idx] * TO_DEG);
+    alpha.resize(stall_idx+1);
+    cl.resize(stall_idx+1);
+    cd.resize(stall_idx+1);
+    alpha.reserve(len);
+    cl.reserve(len);
+    cd.reserve(len);
+
+    for (int i=stall_idx+1; i<len; i++){
+        alpha.push_back(TO_RAD * (double) i);
+        cl.push_back(0.0);
+        cd.push_back(0.0);
+        DataPoint p {alpha[i], cl[i], cd[i]};
+        viterna_corrigan(p, stall, this->aspect_ratio);
+    }
 }
 
 void AerofoilBuilder::add_data(DataRow data){
