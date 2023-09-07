@@ -7,6 +7,7 @@
 #include <boost/range/detail/combine_cxx11.hpp>
 #include <boost/tuple/detail/tuple_basic.hpp>
 #include <cassert>
+#include <cmath>
 #include <csv.hpp>
 #include <iomanip>
 #include <iostream>
@@ -22,25 +23,54 @@ using namespace csv;
 using namespace std;
 
 const double TO_RAD = boost::math::double_constants::pi / 180;
+const double PI = boost::math::double_constants::pi;
 
+/**
+ * @brief cast a string to double
+ * 
+ * @param s 
+ * @return double 
+ */
 double to_double(string s) {
     boost::algorithm::trim(s);
     return boost::lexical_cast<double>(s);
 }
 
-void sort_by_re(vector<double>& alpha, vector<double>& re,vector<double>& cl,vector<double>& cd) {
-    // Sort 're' in ascending order and rearrange other vectors accordingly.
-    std::vector<std::pair<double, std::pair<double, std::pair<double, double>>>> combined;
-    for (size_t i = 0; i < re.size(); ++i) {
-        combined.push_back({re[i], {alpha[i], {cl[i], cd[i]}}});
+struct DataPoint {
+    double& alpha;
+    double& cl;
+    double& cd;
+};
+
+/**
+ * @brief update alpha and cd for aspect ratio correction
+ * 
+ * @param p - the datapoint
+ * @param ar - aspect ratio
+ */
+void lanchester_prandtl(DataPoint p, double ar) {
+    p.cd = p.cd + p.cl * p.cl / (PI * ar);
+    p.alpha = p.alpha + p.cl / (PI *ar);
+}
+
+/**
+ * @brief update cl and cd values inplace for aspect ratio correction
+ * 
+ * @param p - the datapoint
+ * @param stall - the data at the stall point
+ * @param ar - aspect ratio
+ */
+void viterna_corrigan(DataPoint p, DataPoint stall, double ar) {
+    double cd_max;
+    if (ar > 50.0){
+        cd_max = 2.01;
+    } else {
+        cd_max = 1.1 + 0.018 * ar;
     }
-    std::stable_sort(combined.begin(), combined.end());
-    for (size_t i = 0; i < re.size(); ++i) {
-        re[i] = combined[i].first;
-        alpha[i] = combined[i].second.first;
-        cl[i] = combined[i].second.second.first;
-        cd[i] = combined[i].second.second.second;
-    }
+    double kd = (stall.cd - cd_max * pow(sin(stall.alpha), 2)) / cos(stall.alpha);
+    double kl = (stall.cl - cd_max * sin(stall.alpha) * cos(stall.alpha)) * sin(stall.alpha) / pow(cos(stall.alpha), 2);
+    p.cl = cd_max / 2.0 * sin(2.0 * p.alpha) + kl * pow(cos(p.alpha), 2) / sin(p.alpha);
+    p.cd = cd_max * pow(sin(p.alpha), 2) + kd * cos(p.alpha);
 }
 
 void AerofoilBuilder::add_data(tuple<double, vector<double>, vector<double>, vector<double>> data){
