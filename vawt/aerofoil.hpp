@@ -96,7 +96,7 @@ class Aerofoil {
      * @param re
      * @return ClCd
      */
-    ClCd cl_cl(double alpha, double re) {
+    ClCd cl_cd(double alpha, double re) {
         double cl = this->cl(re, alpha);
         double cd = this->cd(re, alpha);
         return ClCd(cl, cd);

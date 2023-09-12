@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     std::cout << "cl = [";
     for (auto alpha : alpha) {
         for (auto re : re) {
-            auto cl = aerofoil->cl_cl(alpha, re).cl();
+            auto cl = aerofoil->cl_cd(alpha, re).cl();
             std::cout << cl << ", ";
         }
     }
