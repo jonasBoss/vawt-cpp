@@ -19,7 +19,9 @@ class StreamTube {
      * @param case_ - case settings
      * @return double
      */
-    double thrust_error(double a, VAWTCase case_);
+    double thrust_error(double a, VAWTCase case_){
+      return this->foil_thrust(a, case_) - StreamTube::wind_thrust(a);
+    }
     std::tuple<double, double, double> w_alpha_re(double a, VAWTCase case_);
     double c_tan(double a, VAWTCase case_);
     double a_strickland(VAWTCase case_);
