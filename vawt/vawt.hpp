@@ -1,10 +1,16 @@
 #pragma once
 
 #include "aerofoil.hpp"
+#include <functional>
 #include <memory>
 #include <sys/types.h>
+#include <vector>
 
 namespace vawt {
+
+class VAWTSolution;
+class StreamTubeSolution;
+
 class VAWTSolver {
   private:
     std::shared_ptr<Aerofoil> aerofoil;
@@ -83,6 +89,9 @@ class VAWTSolver {
         this->_epsilon = epsilon;
         return *this;
     }
+
+    VAWTSolution solve(double beta);
+    VAWTSolution solve(std::function<double(double)> beta);
 };
 
 /**
@@ -109,6 +118,101 @@ struct VAWTCase {
      * @brief Aerofoil
      */
     std::shared_ptr<Aerofoil> aerofoil;
+};
+
+class VAWTSolution {
+  private:
+    VAWTCase case_;
+    uint n_streamtubes;
+    std::vector<double> _theta;
+    std::vector<double> _beta;
+    std::vector<double> _a;
+    std::vector<double> _a_0;
+    double _epsilon;
+    StreamTubeSolution solution(double theta);
+
+  public:
+    /**
+     * @brief Torque ceofficient of the turbine
+     *
+     * @return double
+     */
+    double c_torque();
+
+    /**
+     * @brief Power coefficient of the turbine
+     *
+     * @return double
+     */
+    double c_power() { return this->c_torque() * this->case_.tsr; }
+
+    /**
+     * @brief the pitch angle `beta` at the location `theta`
+     *
+     * @param theta
+     * @return double
+     */
+    double beta(double theta);
+
+    /**
+     * @brief the induction factor `a` at the location `theta`
+     *
+     * @param theta
+     * @return double
+     */
+    double a(double theta);
+
+    /**
+     * @brief the upstream induction factor `a_0` at the location `theta`
+     *
+     * @param theta
+     * @return double
+     */
+    double a_0(double theta);
+
+    /**
+     * @brief the difference between the wind thrust and the foil force
+     * (solution error) at the location `theta`
+     *
+     * @param theta
+     * @return double
+     */
+    double thrust_error(double theta);
+
+    /**
+     * @brief tangential foil coefficient at the location `theta`
+     *
+     * coefficient of lift and drag evaluated in tangential direction
+     *
+     * @param theta
+     * @return double
+     */
+    double c_tan(double theta);
+    double epsilon() { return this->_epsilon; }
+
+    /**
+     * @brief the relative windspeed at the foil at location `theta`
+     *
+     * @param theta
+     * @return double
+     */
+    double w(double theta);
+
+    /**
+     * @brief the angle of attac at the foil at location `theta`
+     *
+     * @param theta
+     * @return double
+     */
+    double alpha(double theta);
+
+    /**
+     * @brief the local reynolds number at the foil at location `theta`
+     *
+     * @param theta
+     * @return double
+     */
+    double re(double theta);
 };
 
 } // namespace vawt
