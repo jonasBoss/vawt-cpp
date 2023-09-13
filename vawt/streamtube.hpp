@@ -19,14 +19,48 @@ class StreamTube {
      * @param case_ - case settings
      * @return double
      */
-    double thrust_error(double a, VAWTCase case_){
-      return this->foil_thrust(a, case_) - StreamTube::wind_thrust(a);
+    double thrust_error(double a, VAWTCase case_) {
+        return this->foil_thrust(a, case_) - StreamTube::wind_thrust(a);
     }
+
+    /**
+     * @brief the relative velocity magnitude `w`, the angle of attack `alpha`
+     * in radians and the local reynolds number `re` at the foil for a given
+     * induction factor a
+     *
+     * @param a
+     * @param case_
+     * @return std::tuple<double, double, double>
+     */
     std::tuple<double, double, double> w_alpha_re(double a, VAWTCase case_);
+
+    /**
+     * @brief tangential foil coefficient
+     *
+     * @param a
+     * @param case_
+     * @return double
+     */
     double c_tan(double a, VAWTCase case_);
     double a_strickland(VAWTCase case_);
     double foil_thrust(double a, VAWTCase case_);
+
+    /**
+     * @brief Thrust coefficient by momentum theory or Glauert empirical formula
+
+     * A crude straight line approximation for Glauert formula is used
+     * between 0.4 < a < 1.0,  0.96 < CtubeThru < 2.0
+     *
+     * @param a
+     * @return double
+     */
     static double wind_thrust(double a);
+
+    /**
+     * @brief reference windspeed
+     *
+     * @return double
+     */
     double c_0() { return 1.0 - 2.0 * this->a_0; }
 
     class Velocity {
@@ -46,10 +80,23 @@ class StreamTube {
         double magnitude();
     };
 
+    /**
+     * @brief windspeed at the foil
+     *
+     * @param a
+     * @return Velocity
+     */
     Velocity c_1_vec(double a) {
         return Velocity::from_global(0.0, -this->c_0() * (1.0 - a));
     }
 
+    /**
+     * @brief relative velocity at foil in global xy coordinates
+     *
+     * @param a
+     * @param case_
+     * @return Velocity
+     */
     Velocity w_vec(double a, VAWTCase case_) {
         return this->c_1_vec(a) -
                Velocity::from_tangetial(0.0, case_.tsr, this->theta);
