@@ -134,6 +134,8 @@ class StreamTube {
 };
 
 class StreamTubeSolution {
+    friend VAWTSolution;
+
   private:
     VAWTCase case_;
     StreamTube tube;

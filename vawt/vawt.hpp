@@ -9,6 +9,7 @@
 namespace vawt {
 
 class VAWTSolution;
+struct VAWTCase;
 class StreamTubeSolution;
 
 class VAWTSolver {
@@ -19,6 +20,21 @@ class VAWTSolver {
     double _re = 60'000.0;
     double _solidity = 0.1;
     double _epsilon = 0.01;
+
+    /**
+     * @brief iterate over all streamtubes, applying `solve_fn`.
+     *
+     * `solve_fn` is called for each pair of up and downstream streamtubes with:
+     * `Fn(case: VAWTCase, theta_up: double, theta_down: double) -> (beta_up:
+     * double, beta_down: double, a_up: double, a_down: double)`
+     * @param solve_fn
+     * @return VAWTSolution
+     */
+    VAWTSolution
+    map_streamtubes(std::function<std::tuple<double, double, double, double>(
+                        VAWTCase, double, double)>
+                        solve_fn);
+    VAWTCase get_case();
 
   public:
     /**
@@ -121,6 +137,8 @@ struct VAWTCase {
 };
 
 class VAWTSolution {
+    friend VAWTSolver;
+
   private:
     VAWTCase case_;
     uint n_streamtubes;
@@ -130,6 +148,11 @@ class VAWTSolution {
     std::vector<double> _a_0;
     double _epsilon;
     StreamTubeSolution solution(double theta);
+    VAWTSolution(VAWTCase case_, uint n_streamtubes, std::vector<double> theta,
+                 std::vector<double> beta, std::vector<double> a,
+                 std::vector<double> a_0, double epsilon)
+        : case_(case_), _theta(theta), _beta(beta), _a(a), _a_0(a_0),
+          _epsilon(epsilon){};
 
   public:
     /**
