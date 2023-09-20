@@ -1,4 +1,5 @@
 #include "aerofoil.hpp"
+#include "private_stuff.hpp"
 
 #include <sys/types.h>
 
@@ -23,9 +24,10 @@
 #include <tuple>
 #include <vector>
 
-using namespace vawt;
 using namespace csv;
 using namespace std;
+
+namespace vawt {
 
 const double PI = boost::math::double_constants::pi;
 const double TO_RAD = PI / 180.0;
@@ -113,6 +115,14 @@ void resample_set(DataSet& dataset) {
             cd.push_back(cd_interp(x));
         }
     }
+}
+
+std::pair<double, double> ClCd::to_tangential(double alpha, double beta) {
+    return rot_vec(this->cl(), -this->cd(), alpha + beta);
+}
+std::pair<double, double> ClCd::to_global(double alpha, double beta,
+                                          double theta) {
+    return rot_vec(this->cl(), -this->cd(), alpha + beta + theta);
 }
 
 DataSet AerofoilBuilder::transformed_set() {
@@ -234,3 +244,4 @@ shared_ptr<Aerofoil> AerofoilBuilder::build() {
     return shared_ptr<Aerofoil>(
         new Aerofoil(alpha, re, cl, cd, this->_symmetric));
 }
+} // namespace vawt

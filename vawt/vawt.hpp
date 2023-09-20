@@ -1,10 +1,6 @@
 #pragma once
 
 #include "aerofoil.hpp"
-#include <functional>
-#include <memory>
-#include <sys/types.h>
-#include <vector>
 
 namespace vawt {
 

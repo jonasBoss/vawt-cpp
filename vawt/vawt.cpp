@@ -7,7 +7,7 @@
 #include <tuple>
 #include <vector>
 
-using namespace vawt;
+namespace vawt {
 const double PI = boost::math::double_constants::pi;
 
 VAWTSolution VAWTSolver::solve(double beta) {
@@ -109,3 +109,5 @@ double VAWTSolution::alpha(double theta) {
     return this->solution(theta).alpha();
 }
 double VAWTSolution::re(double theta) { return this->solution(theta).re(); }
+
+} // namespace vawt

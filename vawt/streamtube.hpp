@@ -2,10 +2,7 @@
 
 #include "vawt.hpp"
 #include <boost/math/constants/constants.hpp>
-#include <cmath>
-#include <memory>
-#include <tuple>
-#include <utility>
+
 namespace vawt {
 class StreamTubeSolution;
 

@@ -1,12 +1,27 @@
 #include "streamtube.hpp"
+#include "private_stuff.hpp"
 #include "vawt.hpp"
 #include <boost/math/constants/constants.hpp>
 #include <cmath>
 
-using namespace vawt;
 using namespace std;
 
+namespace vawt {
+
 const double PI = boost::math::double_constants::pi;
+
+StreamTube::Velocity StreamTube::Velocity::from_tangetial(double x, double y, double theta) {
+    auto [a, b] = rot_vec(x, y, theta);
+    return Velocity(a, b);
+}
+
+std::pair<double, double> StreamTube::Velocity::to_foil(double theta, double beta) {
+    return rot_vec(x, y, -theta - beta);
+}
+
+double StreamTube::Velocity::magnitude() {
+    return sqrt(pow(x,2)+pow(y,2));
+}
 
 tuple<double, double, double> StreamTube::w_alpha_re(double a, VAWTCase case_) {
     auto w = this->w_vec(a, case_);
@@ -78,3 +93,4 @@ double StreamTube::solve_a(VAWTCase case_, double epsilon) {
     }
     return a_left + (a_right - a_left) / 2.0;
 }
+} // namespace vawt
