@@ -18,7 +18,7 @@ VAWTSolution VAWTSolver::solve(std::function<double(double)> beta) {
     return this->map_streamtubes([beta, this](VAWTCase case_, double theta_up,
                                               double theta_down) {
         double beta_up = beta(theta_up);
-        double beta_down = beta(beta_down);
+        double beta_down = beta(theta_down);
         double a_up =
             StreamTube(theta_up, beta_up, 0.0).solve_a(case_, this->_epsilon);
         double a_down = StreamTube(theta_down, beta_down, a_up)
@@ -60,6 +60,17 @@ VAWTSolution VAWTSolver::map_streamtubes(
         a[i_down] = a_down;
         a_0[i_down] = a_up;
     }
+
+    // the solution is 2 PI periodic, so we can extrapolate a bit
+    theta.insert(theta.begin(), theta.back() - 2 * PI);
+    theta.push_back(theta[1] + 2 * PI);
+    beta.insert(beta.begin(), beta.back());
+    beta.push_back(beta[1]);
+    a.insert(a.begin(), a.back());
+    a.push_back(a[1]);
+    a_0.insert(a_0.begin(), a_0.back());
+    a_0.push_back(a_0[1]);
+
     return VAWTSolution(case_, this->_n_streamtubes, theta, beta, a, a_0,
                         this->_epsilon);
 }

@@ -87,8 +87,15 @@ class Aerofoil {
      * @return ClCd
      */
     ClCd cl_cd(double alpha, double re) {
-        double cl = this->cl(re, alpha);
-        double cd = this->cd(re, alpha);
+        double cl, cd;
+        if (this->symmetric) {
+            double sgn = (alpha >= 0) ? 1 : -1;
+            cl = this->cl(re, abs(alpha)) * sgn;
+            cd = this->cd(re, abs(alpha));
+        } else {
+            cl = this->cl(re, alpha);
+            cd = this->cd(re, alpha);
+        }
         return ClCd(cl, cd);
     }
 };

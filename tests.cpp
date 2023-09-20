@@ -15,6 +15,7 @@ using namespace csv;
 using namespace std;
 
 const double TO_RAD = boost::math::double_constants::pi / 180;
+const double TO_DEG = 1 / TO_RAD;
 
 double to_double(string s) {
     boost::algorithm::trim(s);
@@ -50,7 +51,7 @@ public:
             iter++;
             alpha.push_back(to_double(iter->get()) * TO_RAD);
             iter++;
-            re.push_back(to_double(iter->get()));
+            re.push_back(to_double(iter->get()) * 1e5);
             iter++;
             CtubeThru.push_back(to_double(iter->get()));
             iter++;
@@ -71,9 +72,9 @@ int main(int argc, char** argv) {
 
     vawt::AerofoilBuilder* builder = new vawt::AerofoilBuilder;
     auto aerofoil =
-        builder->load_data("examples/NACA0018/NACA0018Re0080.data", 80000.0)
-            .load_data("examples/NACA0018/NACA0018Re0040.data", 40000.0)
-            .load_data("examples/NACA0018/NACA0018Re0160.data", 160000.0)
+        builder->load_data("examples/NACA0018/NACA0018Re0080.data", 80'000.0)
+            .load_data("examples/NACA0018/NACA0018Re0040.data", 40'000.0)
+            .load_data("examples/NACA0018/NACA0018Re0160.data", 160'000.0)
             .set_aspect_ratio(12.8)
             .update_aspect_ratio(true)
             .symmetric(true)
@@ -84,17 +85,20 @@ int main(int argc, char** argv) {
 
     std::cout << "Solving Turbine" << std::endl;
     auto testresult = VAWTSolver(aerofoil)
-        .re(31'000.0)
+        .re(31'300.0)
         .solidity(0.3525)
         .n_streamtubes(matlab->n_streamtubes())
         .tsr(3.25)
         .solve(0.0);
 
-    std::cout << "Checking results" << std::endl;
+    std::cout << "Checking Results" << std::endl;
     for (int i=0; i< matlab->n_streamtubes(); i++){
         double theta = matlab->theta[i];
-        double a = matlab->a[i];
-        assert(rel_eq(a, testresult.a(theta), 0.01, testresult.epsilon() * 2));
+        std::cout << "Checking Theta = "<< theta*TO_DEG << "°" << std::endl;
+        assert(rel_eq(matlab->a[i], testresult.a(theta), 0.01, testresult.epsilon() * 2));
+        assert(rel_eq(matlab->w[i], testresult.w(theta),0.01, 0.01));
+        assert(rel_eq(matlab->alpha[i], testresult.alpha(theta),0.01, 0.01));
+        assert(rel_eq(matlab->re[i], testresult.re(theta),0.01, 0.01));
     }
     std::cout << "Ok!" << std::endl;
     return 0;
