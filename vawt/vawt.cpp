@@ -1,9 +1,11 @@
+// #include <omp.h>
 #include "vawt.hpp"
 #include "Interpolators/_1D/LinearInterpolator.hpp"
 #include "streamtube.hpp"
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <thread>
 #include <tuple>
 #include <vector>
 
@@ -46,19 +48,40 @@ VAWTSolution VAWTSolver::map_streamtubes(
 
     auto case_ = this->get_case();
 
-    for (uint i = 0; i < this->_n_streamtubes / 2; i++) {
-        uint i_down = this->_n_streamtubes - 1 - i;
+    const int n_threads = std::thread::hardware_concurrency();
+    uint step = this->_n_streamtubes / 2 / n_threads;
+    std::vector<std::thread> threads;
 
-        double theta_up = theta[i];
-        double theta_down = theta[i_down];
-        auto [beta_up, beta_down, a_up, a_down] =
-            solve_fn(case_, theta_up, theta_down);
+    for (uint j = 0; j < n_threads; j++) {
+        uint start = j * step;
+        uint end = start + step;
 
-        beta[i] = beta_up;
-        beta[i_down] = beta_down;
-        a[i] = a_up;
-        a[i_down] = a_down;
-        a_0[i_down] = a_up;
+        threads.push_back(std::thread(
+            [this, theta, solve_fn,
+             case_](uint start, uint end, std::vector<double>& beta,
+                    std::vector<double>& a, std::vector<double>& a_0) {
+                for (uint i = start; i < end && i < this->_n_streamtubes / 2;
+                     i++) {
+                    uint i_down = this->_n_streamtubes - 1 - i;
+
+                    double theta_up = theta[i];
+                    double theta_down = theta[i_down];
+                    auto [beta_up, beta_down, a_up, a_down] =
+                        solve_fn(case_, theta_up, theta_down);
+
+                    beta[i] = beta_up;
+                    beta[i_down] = beta_down;
+                    a[i] = a_up;
+                    a[i_down] = a_down;
+                    a_0[i_down] = a_up;
+                }
+            },
+            start, end, std::ref(beta), std::ref(a), std::ref(a_0)));
+    }
+
+    // Join the threads
+    for (auto& thread : threads) {
+        thread.join();
     }
 
     // the solution is 2 PI periodic, so we can extrapolate a bit
