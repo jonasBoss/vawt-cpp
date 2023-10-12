@@ -46,6 +46,7 @@ VAWTSolution VAWTSolver::map_streamtubes(
 
     auto case_ = this->get_case();
 
+    #pragma omp parallel for
     for (uint i = 0; i < this->_n_streamtubes / 2; i++) {
         uint i_down = this->_n_streamtubes - 1 - i;
 

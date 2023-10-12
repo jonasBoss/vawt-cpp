@@ -5,6 +5,7 @@ project(vawt)
 add_library(vawt vawt.hpp vawt.cpp aerofoil.hpp aerofoil.cpp private_stuff.hpp streamtube.hpp streamtube.cpp)
 
 find_package(Boost REQUIRED)
+find_package(OpenMP REQUIRED)
 
 target_include_directories(vawt 
     PUBLIC ../external/csv-parser/single_include
@@ -15,4 +16,5 @@ target_link_libraries(vawt
     csv
     Boost::boost
     Interpolate
+    OpenMP::OpenMP_CXX
 )
